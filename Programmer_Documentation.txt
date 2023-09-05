@@ -1,0 +1,272 @@
+﻿Programmer’s Documentation of Discrete Simulation of Population
+
+
+Faculty of Mathematics and Physics
+
+
+1.9.2023
+
+
+Jakub Jersenský
+
+
+
+
+
+1. Description of the Problem          3
+2. Description of the Algorithm        3
+3. Description of the Program        4
+3.1 Random Number Generating Functions        4
+3.2 Person() class        5
+3.2.1 Male Inheritance        6
+3.2.2 Female Inheritance        6
+3.3 Illness        6
+3.4 Simulation        7
+- and the number of children she can bear to SampleGaussian(2,2) - absolute and rounded        8
+3.5 Main        8
+4. Input and Output of the Program        8
+5. Other Notes        9
+
+
+
+
+
+
+1. Description of the Problem
+
+
+This version of discrete simulation of population with optional pandemics treats the problem of uncontrollable growth of population that is exponential at this point in the real world with a natural catastrophe such as pandemics. Therefore, this program simulates the growth of a population with the limiting factor of age of people and the appearance of a pandemic.
+
+
+2.  Description of the Algorithm
+Firstly, the program uses two different algorithms for number generation in addition to the innate C# Random(). These two are random number generation according to the Poisson distribution[1] and according to the Normal distribution[2].
+
+
+Poisson distribution is a discrete probability distribution so it gives a probability of a countable outcome. Important is that the events are independent of each other and the inputted number is the mean of the data. Therefore the Poisson distribution number generator is ideal to be used for the LifeSpan of people in the simulation and for the expected time of when the people will get engaged.
+
+
+On the other hand, Normal distribution is a continuous function centered around the mean. There are two main variables for Normal distribution which is mean and standard deviation. Mean defines the center of the curve meanwhile standard deviation defines the width of the curve. Therefore, this generation is ideal for the number of children a female can have, or when a female can get pregnant, or the length of illness for an individual. It is important to note that his generator gives decimal places so the result has to be rounded. In case of negative numbers, I always took the absolute values of the result.
+
+
+Otherwise, algorithmically, the program follows a main pathway in the Execute() section in the simulation class, where the main list of branching happens. Each year, the simulation goes through whole list of population and decides what happens to individual upon individual. It checks whether the person is a female and should give a birth; if the person is engaged or if he should get engaged; if he is engaged, it checks if he breaks up or if a female should get pregnant; treats the progression of illness to the person; and finally checks if he died this year - deletes him if he did; then proceeds to increase his age.
+
+
+After going through all of these steps, it saves the number of people that survived in this year and the number of people that were infected in this year. - It calculates even the people that died due to infection.
+
+
+I chose this approach because it seemed very intuitive although it proves to be rather slow if we choose a larger sample size of people or a longer simulation with a not so deadly disease. Maybe it would have been more interesting to have a 2D plane where people live and not bother that much with years and giving birth to new people but to check the progression of the disease through this plane, on the other hand, it would not solve the initial problem of population growth.
+
+
+3.  Description of the Program
+
+
+There are 3 classes in this program: Human, Illness, and Simulation.
+
+
+3.1 Random Number Generating Functions
+
+
+public static double SampleGaussian(double mean, double stddev)
+* Stddev stands for standart deviation
+* This method generates a number according to the normal distribution with parameters of a mean and standart deviation, it returns a double, therefore, it is always rounded in the program when some other variable accepts this
+
+
+
+
+public static int GetPoisson(double lambda)
+* this method accepts only one variable around which it generates the data, note that it does not go below 0, but would rather pile around 0
+* This method generates a number according to the poisson distribution with parameters of double lambda, it returns an int, so it does not need any processing in the program
+3.2 Person() class
+
+
+        It has parameters for
+ Age - self explanatory, how old is the person
+ RelationshipAge - when is the person ready to look for a relationship
+ LifeTime - when will the person die
+TimeChildren - when is the person ready to have children
+ Couple - who is his partner
+ Illness - a simple bool whether he is ill
+ HowlongIl - for how long has he been ill
+Immunity - a simple bool whether he was already ill or not
+
+
+In this abstract class, there is the override of ToString() method for a simpler output
+
+
+GetInfected() method that decides whether the person gets infected or not
+
+
+InfectedEnd() method decides if he get cured in this year or not
+
+
+IsIll() only checks the status if he is ill or not, returns a bool
+
+
+IlnessDie() method that decides if he dies or not if he does, it sets his age to his lifeTime and he dies at the end of his turn
+
+
+It also has methods treating relationships:
+
+
+public bool SuitableRelationship() - checks if the person is of age and does not have a partner, returns bool
+
+
+public bool SuitablePartner(Person person) - checks if the two people are of opposite gender and their age difference is less than 5
+
+
+public bool Engaged() - returns a bool that says if the person is engaged or not
+
+
+public void Disengage() - sets partner’s couple to null, then sets person’s couple to null, and resets the time of next child
+
+
+public bool EndRelationship() - returns if the two people will should end their relationship upon probability, probability decreases as their age group increases from teenager to young adult to adult
+
+
+
+
+
+
+
+
+public void FindPartner(IEnumerable<Person> population, int CurrentTime, int infectioness)
+
+
+-  this one is divided into two parts:
+* firstly, regardless of gender, it checks for illness of both people - if one of them is ill, the other goes through GetInfected() method
+* Secondly, if both people are suitable for each other with a bit of luck they get engaged and the time for their next children is set - this ends this method
+3.2.1 Male Inheritance
+A simple inheritance with adding “Male” to the overridden ToString() method. And if a Male is declared, his age is the Person’s Age.
+
+
+3.2.2 Female Inheritance
+
+
+A more complex class that has to treat pregnancy and giving birth to a new person
+
+
+Again sets age and overrides ToString()
+
+
+Adds new parameters:
+* IsPregnant - simple bool
+* PregnantAge - when can she get pregnant
+* ChildrenCount - how many children can she still have
+
+
+And new functions:
+
+
+public bool SuitablePregnancy(int CurrentTime)
+* checks if the Female is able to get pregnant in the current year by checking her parameters
+
+
+public Person         GiveBirth(int CurrentTime)
+* gives birth to a Male or Female with equal chances and sets their parameters according to probabilities - will be discussed under simulation part
+* decreases the number of children she can still have and sets a time for next expected pregnancy
+
+
+3.3 Illness
+
+
+This is a simple class for saving parameters of the illness
+* int StartingTime - in which year it starts
+* int EndingTime - in which year it ends
+* int Infectioness - how much does it spread with what probability
+* int Deadliness - how deadly is it, with what probability does a person die
+* int StartProportion - what % of population is infected at the first year
+
+
+Follows with a simple methods for each of these that returns the value
+
+
+* public int WhenStart()
+* public int When End()
+* public int HowInfetion()
+* public int HowDeadly()
+
+
+
+
+3.4 Simulation
+
+
+This class has these parameters:
+
+
+public List<Person> Population - a list that will keep all of the Person instances
+
+
+public int Time - will copy the length of the simulation
+
+
+private int _CurrentTime - to keep the current year, private to not be changed somewhere, be protected
+
+
+public Illness _illness - to copy the illness made through inputs
+
+
+public int[] SizePopulation - to keep track of number of people in each year
+
+
+public int[] SizeInfected - to keep track of number of infected people in each year
+
+
+public Simulation(IEnumerable<Person> population, int time, Illness illness)
+* Initializes simulation, sets the arrays to be of correct size to have enough size for all the years, 
+* Foreach person it sets their life expectancy to be GetPoisson(70) - treat it as around 70
+* Their relationship to be GetPoisson(20)
+* If it is a female:
+   *  it sets her pregnant age to be SampleGaussian(28,5) - rounded
+   * and the number of children she can bear to SampleGaussian(2,2) - absolute and rounded
+
+
+Finally the method Execute() that actually runs the simulation
+
+
+While Current Time is lower than the simulation length:
+* It checks if it is time to start and infection
+   * If it is, it starts the infection with the inputted % of population infected
+* It checks if it is time to end the epidemics
+   * If it is, it sets every person as healthy
+* Then it goes through every person as described in section 2.
+
+
+
+
+3.5 Main
+
+
+Main method is used for data collection and for setting up the simulation class, then simulation is executed and results are written on the console. Data collection is checking once for correct input and expects the user to input correctly on the second try, otherwise the program ends upon an error.
+
+
+4.  Input and Output of the Program
+
+
+The program is a console application so all of input and output is treated through the console.
+
+
+The program leads you through multiple required inputs that include the number of years that the simulation should run for. Keep in mind that the population in the real world is growing exponentially and this simulation is no exception for this so the calculation might take a long time if you choose a long time period. Please input a whole number as the simulation does not work with months.
+
+
+Secondly, it asks you for the number of males and females that will be present at the beginning of time. Again keep in mind the numbers and the tendency of exponential growth of the population.
+
+
+Finally, the simulation gives you an option regarding the disease outbreak. In case you want an outbreak to be present, simply type yes. It asks you for the starting year and the ending year of the disease. Note that the ending year is treated as a cure being invented so all the disease disappears from the population, please write the starting and ending year within the length of the simulation. Then it continues to ask you for specific values for the disease such as the spreading power, the death rate, and the initial percentage of population being infected, please write these values as whole numbers between 0 and 100.
+
+
+That is all for the input and simulation starts to run and process the data.
+
+
+It gives you output in three forms. Firstly, it gives a long list of surviving people in a formate of person’s age, his Lifetime and his gender, then it gives a list of total number of living people in each year of the simulation, and lastly, it gives a list of total people being infected in a specific year, please note that it omits the years where nobody was infected and gives it in a format in year x there were y infected people.
+
+
+5. Other Notes
+In the end, this program has a lot of gaps regarding the simulation of real life. The computer is like a god to the instances generated as it sets their lifetime, when they can get married, when they can have children etc. And they always die upon reaching that age unless they are ill. There should be more options for them to die, maybe just like breaking relationships, there should be an inverse function for this in the sense of the older you are, the more likely you are to die.
+The fertility after a certain age is taken care of having a limit to the number of children rather than setting a border age.
+The disease is also treated weirdly, as it was hard to make people meet in this simulation, therefore, it spreads only when looking for a new partner. Making it look like people living in this simulated world only go out to make partners and then spend the rest of their life in their houses unless they break up. There should be an option to spread the disease to children that the partners have - either during giving birth or after it when they are living with them and the children are not yet of an age to look for partners.
+
+
+________________
+[1] "C# code for generating Poisson random values." by John D. Cook https://www.johndcook.com/blog/csharp_poisson/. Accessed 1 Sep. 2023.
+[2] Sampling from a Gaussian Distribution in C#. by tansey. Gist. https://gist.github.com/tansey/1444070
