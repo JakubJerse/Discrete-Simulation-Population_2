@@ -1,0 +1,21 @@
+﻿User’s Guide to Discrete Simulation of Population
+
+
+
+
+Welcome to the guide on how to use the program treating Discrete Simulation of Population with optional disease outbreak. It is a console application, so everything is treated through the console, meaning both input and output. 
+
+
+The program leads you through multiple required inputs that include the number of years that the simulation should run for. Keep in mind that the population in the real world is growing exponentially and this simulation is no exception for this so the calculation might take a long time if you choose a long time period. Please input a whole number as the simulation does not work with months.
+
+
+Secondly, it asks you for the number of males and females that will be present at the beginning of time. Again keep in mind the numbers and the tendency of exponential growth of the population.
+
+
+Finally, the simulation gives you an option regarding the disease outbreak. In case you want an outbreak to be present, simply type yes. It asks you for the starting year and the ending year of the disease. Note that the ending year is treated as a cure being invented so all the disease disappears from the population, please write the starting and ending year within the length of the simulation. Then it continues to ask you for specific values for the disease such as the spreading power, the death rate, and the initial percentage of population being infected, please write these values as whole numbers between 0 and 100.
+
+
+That is all for the input and simulation starts to run and process the data.
+
+
+It gives you output in three forms. Firstly, it gives a long list of surviving people in a format of person’s age, his Lifetime and his gender, then it gives a list of total number of living people in each year of the simulation, and lastly, it gives a list of total people being infected in a specific year, please note that it omits the years where nobody was infected and gives it in a format in year x there were y infected people.
